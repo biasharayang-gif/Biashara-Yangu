@@ -118,7 +118,10 @@ function notices(gid,f,st){
   if(st.need>0&&st.rem/st.need<0.15)out.push({i:'🧺',c:'#FFF2C7',h:'Feed running low',x:'About '+fmt(st.rem,1)+' kg left in the plan. Prepare the next batch.'});
   return out}
 /* ---------- rendering ---------- */
-function header(title,sub,k){return '<div class="hero"><div class="row"><img class="logo" alt="Biashara Yangu TV" src="'+LOGO+'"><span class="pill">'+esc(dshow(today()))+'</span>'+(S.authed?'<button class="pill" data-act="signout" style="cursor:pointer;color:#fff;font:inherit;font-size:11px;font-weight:700">Sign out</button>':'')+'</div><div class="k">'+esc(k||'Biashara Yangu')+'</div><h1>'+esc(title)+'</h1><p>'+esc(sub||'')+'</p></div>'}
+var LOGO_OK=/^data:image\/(png|jpeg);base64,[A-Za-z0-9+\/=]+$/;
+function logoHtml(gl){return (gl&&LOGO_OK.test(gl))?'<span style="display:flex;align-items:center"><img class="logo" alt="" src="'+gl+'"><img class="logo" alt="Biashara Yangu TV" style="width:28px;height:28px;border-radius:8px;margin-left:8px" src="'+LOGO+'"></span>':'<img class="logo" alt="Biashara Yangu TV" src="'+LOGO+'">'}
+function gthumb(g){return (g&&g.logo&&LOGO_OK.test(g.logo))?'<img alt="" src="'+g.logo+'" style="width:26px;height:26px;border-radius:7px;vertical-align:middle;margin-right:8px;object-fit:cover;background:#fff">':''}
+function header(title,sub,k){return '<div class="hero"><div class="row">'+logoHtml(arguments[3])+'<span class="pill">'+esc(dshow(today()))+'</span>'+(S.authed?'<button class="pill" data-act="signout" style="cursor:pointer;color:#fff;font:inherit;font-size:11px;font-weight:700">Sign out</button>':'')+'</div><div class="k">'+esc(k||'Biashara Yangu')+'</div><h1>'+esc(title)+'</h1><p>'+esc(sub||'')+'</p></div>'}
 function stat(cls,v,l){return '<div class="sc '+cls+'"><b>'+esc(v)+'</b><span>'+esc(l)+'</span></div>'}
 function curFlock(gid){var L=FL(gid);if(!L.length)return null;for(var i=0;i<L.length;i++)if(L[i].id===S.fid)return L[i];S.fid=L[0].id;return L[0]}
 function flockPick(gid){var L=FL(gid);if(L.length<2)return '';return '<label>Flock</label><select data-act="pick">'+L.map(function(f){return '<option value="'+esc(f.id)+'"'+(f.id===S.fid?' selected':'')+'>'+esc(f.name)+'</option>'}).join('')+'</select>'}
@@ -126,7 +129,7 @@ function render(){
   var app=$('#app');
   if(S.err){app.innerHTML='<div class="card" style="margin-top:40px"><h3>Cannot open the portal</h3><p>'+esc(S.err)+'</p>'+(S.authed?'<button class="btn ghost" data-act="signout">Sign out</button>':'')+'</div>';return}
   if(!S.ready){app.innerHTML='<div class="card" style="margin-top:40px">Loading…'+(S.msg?'<p class="sm">'+esc(S.msg)+'</p>':'')+'</div>';return}
-  var keep={};document.querySelectorAll('input[id],select[id]').forEach(function(e){if(/^(le|lp|gem|gpw|gn|gw|gc|gm|gr|fn|fb|fh|ef|lf|lw|ld|ma|mk|mt|md|pm|pr|pp|cc|ra|rn)$/.test(e.id)&&e.value!=='')keep[e.id]=e.value});
+  var keep={};document.querySelectorAll('input[id],select[id]').forEach(function(e){if(/^(le|lp|lem|lpw|gem|gpw|gn|gw|gc|gm|gr|fn|fb|fh|ef|lf|lw|ld|ma|mk|mt|md|pm|pr|pp|cc|ra|rn)$/.test(e.id)&&e.value!=='')keep[e.id]=e.value});
   if(S.role==='admin'&&!S.adminView)app.innerHTML=renderAdmin();
   else if(S.role==='login')app.innerHTML=renderLogin();
   else app.innerHTML=renderGroup();
@@ -134,7 +137,7 @@ function render(){
   if(S.fid===undefined)S.fid=null;
 }
 function renderLogin(){
-  return header('Welcome','Sign in with the email and password Biashara Yangu gave you.','Group sign-in')+'<main><form class="card" id="lf2" data-act="none"><h3>Sign in</h3><label for="le">Email</label><input id="le" type="email" autocomplete="username" autocapitalize="none" required><label for="lp">Password</label><input id="lp" type="password" autocomplete="current-password" required><div class="err" id="lerr" role="alert">'+esc(S.lerr||'')+'</div><button class="btn" type="submit">Sign in</button><p class="sm" style="margin:12px 0 0">Forgot your password? Contact Biashara Yangu on 0740193141. You need internet the first time you sign in.</p></form></main>'}
+  return header('Welcome','Sign in with the email and password Biashara Yangu gave you.','Group sign-in')+'<main><form class="card" id="lf2" data-act="none"><h3>Sign in</h3><label for="le">Email</label><input id="le" type="email" autocomplete="username" autocapitalize="none" required><label for="lp">Password</label><div style="position:relative"><input id="lp" type="password" autocomplete="current-password" required style="padding-right:52px"><button type="button" data-act="eye" aria-label="Show password" aria-pressed="false" style="position:absolute;right:4px;top:8px;width:44px;height:44px;border:0;background:none;font-size:20px;cursor:pointer;color:var(--muted)">👁</button></div><div class="err" id="lerr" role="alert">'+esc(S.lerr||'')+'</div><button class="btn" type="submit">Sign in</button><p class="sm" style="margin:12px 0 0">Forgot your password? Contact Biashara Yangu on 0740193141. You need internet the first time you sign in.</p></form></main>'}
 function adminRows(){
   var ids=Object.keys(S.store.groups).sort(function(a,b){return String(G(a).name).localeCompare(String(G(b).name))});
   return ids.map(function(id){
@@ -148,29 +151,32 @@ function renderAdmin(){
   var h=header('All groups at a glance','Admin view · you can open any group','Biashara Yangu admin');
   h+='<div class="st">'+stat('g',rows.length,'groups')+stat('y',fmt(tr)+' / '+fmt(tm),'registered for training')+stat('b',fmt(tb),'birds alive')+stat('c',att,'need attention')+'</div><main>';
   h+='<div class="card"><div class="row"><h3 style="margin:0">Groups</h3><button class="btn sm2" data-act="newg">+ Add group</button></div>';
-  if(!rows.length)h+='<p class="sm">No groups yet. Add the first group and give them their code.</p>';
-  else h+='<div class="scroll" style="margin-top:10px"><table><tr><th>Group</th><th>Members</th><th>Reg.</th><th>Birds</th><th>FCR</th><th>Feed left</th><th>Last entry</th><th>Login</th></tr>'+rows.map(function(r){return '<tr class="click" data-act="open" data-id="'+esc(r.id)+'"><td><b>'+esc(r.g.name)+'</b></td><td>'+fmt(r.m)+'</td><td>'+fmt(r.r)+'</td><td>'+fmt(r.birds)+'</td><td>'+(r.fcr?fmt(r.fcr,1):'-')+'</td><td>'+(r.hasFlock?fmt(r.rem)+' kg':'-')+'</td><td>'+(r.dl==null?(r.hasFlock?'<span class="tag t2">Never</span>':'-'):(r.dl===0?'Today':r.dl+' d ago'+(r.dl>3?'<span class="tag t1">Check</span>':'')))+'</td><td><span class="tag '+(r.g.active===false?'t1':'t3')+'">'+(r.g.active===false?'Off':'Active')+'</span></td></tr>'}).join('')+'</table></div><p class="sm">Tap a group to see what it sees, edit its flocks, or switch its login off.</p>';
-  h+='</div><div id="newbox">'+(S.nb||'')+'</div></main>';return h}
+  if(!rows.length)h+='<p class="sm">No groups yet. Add the first group and give them their login.</p>';
+  else h+='<div class="scroll" style="margin-top:10px"><table><tr><th>Group</th><th>Members</th><th>Reg.</th><th>Birds</th><th>FCR</th><th>Feed left</th><th>Last entry</th><th>Login</th></tr>'+rows.map(function(r){return '<tr class="click" data-act="open" data-id="'+esc(r.id)+'"><td>'+gthumb(r.g)+'<b>'+esc(r.g.name)+'</b></td><td>'+fmt(r.m)+'</td><td>'+fmt(r.r)+'</td><td>'+fmt(r.birds)+'</td><td>'+(r.fcr?fmt(r.fcr,1):'-')+'</td><td>'+(r.hasFlock?fmt(r.rem)+' kg':'-')+'</td><td>'+(r.dl==null?(r.hasFlock?'<span class="tag t2">Never</span>':'-'):(r.dl===0?'Today':r.dl+' d ago'+(r.dl>3?'<span class="tag t1">Check</span>':'')))+'</td><td><span class="tag '+(r.g.active===false?'t1':'t3')+'">'+(r.g.active===false?'Off':'Active')+'</span></td></tr>'}).join('')+'</table></div><p class="sm">Tap a group to see what it sees, edit its flocks, or switch its login off.</p>';
+  h+='</div><div id="newbox">'+(S.nb||'')+'</div>'+importCard()+'</main>';return h}
+function importCard(){return '<div class="card"><h3>Import from the offline farm system</h3><p class="sm" style="margin:0 0 8px">In the offline app tap Export backup (all), then choose that file here. It brings in groups, flocks, daily records, vaccinations and money. Running it again updates, it does not duplicate.</p><input type="file" id="impf" accept=".json,application/json">'+(S.imp?'<div class="card" style="margin:10px 0 0;background:var(--surface2)">'+S.imp.sum+'<button class="btn" data-act="doimp"'+(S.impBusy?' disabled':'')+'>'+(S.impBusy?'Importing…':'Import now')+'</button></div>':'')+(S.impMsg?'<div class="banner" style="margin-top:10px">'+esc(S.impMsg)+'</div>':'')+'</div>'}
 function renderGroup(){
   var gid=S.gid,g=G(gid),f=curFlock(gid),st=f?flockStats(gid,f):null,adm=S.role==='admin',h='';
   if(g.active===false&&!adm)return header('Access is switched off','Contact Biashara Yangu on 0740193141.','Group portal');
   var b=g.name?esc(g.name):'Group';
   var titles={home:f&&st?(notices(gid,f,st).some(function(n){return n.bad})?'Something needs attention':'Your flock is on track'):'Welcome',today:'Today',ratio:'Feed ratio',flock:'Flock',money:'Money'};
-  h+=header(S.tab==='home'?titles.home:titles[S.tab],S.tab==='home'?(g.ward||''):(g.name||''),g.name||'Group');
+  h+=header(S.tab==='home'?titles.home:titles[S.tab],S.tab==='home'?(g.ward||''):(g.name||''),g.name||'Group',g.logo);
   if(adm)h+='<div class="banner"><span>Viewing as admin: '+b+'</span><button class="link" data-act="back">Back to all groups</button></div><div class="card"><div class="row"><div><b>Login</b> <span class="sm">'+esc(g.email||'no email')+'</span></div><div><button class="btn ghost sm2" data-act="reset">Send password reset</button> <button class="btn ghost sm2" data-act="toggle">'+(g.active===false?'Switch login on':'Switch login off')+'</button></div></div></div>';
+  if(adm&&!g.email)h+='<div class="card"><h3>Create login for this group</h3><label for="lem">Group login email</label><input id="lem" type="email" autocapitalize="none"><label for="lpw">Starting password (6 or more characters)</label><input id="lpw" value="'+esc(S.pw||(S.pw=rid(8).toLowerCase()))+'"><div class="err" id="lerr2"></div><button class="btn" data-act="mklogin">Create login</button></div>';
+  if(adm&&S.cred&&S.cred.gid===gid)h+='<div class="card gold"><h3>Login created</h3><div class="code" style="font-size:15px;letter-spacing:0">'+esc(S.cred.email)+'<br>'+esc(S.cred.pw)+'</div><p class="sm">Write the password down now. It is not shown again.</p></div>';
   if(S.tab==='home')h+='<div class="st">'+stat('g',fmt(registered(gid))+' / '+fmt(members(gid)),'registered for training')+stat('y',fmt(members(gid)),'members in group')+stat('b',fmt(FL(gid).reduce(function(a,x){return a+flockStats(gid,x).alive},0)),'birds alive')+'</div>';
   h+='<main>'+({home:tabHome,today:tabToday,ratio:tabRatio,flock:tabFlock,money:tabMoney}[S.tab])(gid,f,st,adm)+'</main>';
   h+='<nav class="nav" aria-label="Sections">'+[['home','⌂','Home'],['today','📅','Today'],['ratio','⚖','Ratio'],['flock','🐔','Flock'],['money','💰','Money']].map(function(t){return '<button data-act="tab" data-t="'+t[0]+'" class="'+(S.tab===t[0]?'on':'')+'">'+'<i>'+t[1]+'</i>'+t[2]+'</button>'}).join('')+'</nav>';
   return h}
 function noFlock(gid,adm){return '<div class="card"><h3>No flock yet</h3><p class="sm">'+(adm?'Add a flock on the Flock tab.':'Biashara Yangu will add your flock here. You will then see the daily feed plan.')+'</p></div>'}
 function tabHome(gid,f,st,adm){
-  if(!f)return noFlock(gid,adm)+profileCard(gid);
+  if(!f)return noFlock(gid,adm)+profileCard(gid,adm);
   var N=notices(gid,f,st),first=N[0];
   var h=flockPick(gid)?'<div class="card">'+flockPick(gid)+'</div>':'';
   h+='<div class="card gold"><h3 style="font-size:17px">Do today</h3><div style="font-size:14px">'+esc(first.h)+'. '+(N[1]?esc(N[1].h)+'.':'')+'</div></div>';
-  h+='<div class="card"><h3>Notices</h3>'+N.map(nt).join('')+'</div>'+profileCard(gid);return h}
+  h+='<div class="card"><h3>Notices</h3>'+N.map(nt).join('')+'</div>'+profileCard(gid,adm);return h}
 function nt(n){return '<div class="nt"><div class="dot" style="background:'+n.c+'">'+n.i+'</div><div><b>'+esc(n.h)+'</b><div class="sm">'+n.x+'</div>'+(n.vac?'<button class="btn ghost sm2" style="margin-top:6px" data-act="vacc" data-v="'+esc(n.vac)+'">Mark done</button>':'')+'</div></div>'}
-function profileCard(gid){var p=P(gid);return '<div class="card"><h3>Our group</h3><div class="f2"><div><label for="pm">Members in group</label><input id="pm" type="number" inputmode="numeric" min="0" value="'+esc(members(gid)==null?'':members(gid))+'"></div><div><label for="pr">Registered for training</label><input id="pr" type="number" inputmode="numeric" min="0" value="'+esc(registered(gid)==null?'':registered(gid))+'"></div></div><label for="pp">Group phone</label><input id="pp" type="tel" value="'+esc(p.phone||G(gid).phone||'')+'"><div class="err" id="pe"></div><button class="btn" data-act="saveprof">Save</button><p class="sm" style="margin-top:8px">Registered means paid the KSh 100 training registration to Biashara Yangu.</p></div>'}
+function profileCard(gid,adm){var p=P(gid),lg=G(gid).logo;return '<div class="card"><h3>Our group</h3>'+(adm?'<label for="logof">Group logo (set by Biashara Yangu)</label><div style="display:flex;align-items:center;margin-top:4px">'+((lg&&LOGO_OK.test(lg))?'<img alt="" src="'+lg+'" style="width:56px;height:56px;border-radius:12px;object-fit:cover;background:#fff;border:1px solid var(--line);margin-right:12px">':'')+'<div style="flex:1;min-width:0"><input type="file" id="logof" accept="image/*" style="margin:0">'+((lg&&LOGO_OK.test(lg))?'<button class="link" data-act="rmlogo" type="button">Remove logo</button>':'')+'</div></div><div class="err" id="logoerr"></div>':'')+'<div class="f2"><div><label for="pm">Members in group</label><input id="pm" type="number" inputmode="numeric" min="0" value="'+esc(members(gid)==null?'':members(gid))+'"></div><div><label for="pr">Registered for training</label><input id="pr" type="number" inputmode="numeric" min="0" value="'+esc(registered(gid)==null?'':registered(gid))+'"></div></div><label for="pp">Group phone</label><input id="pp" type="tel" value="'+esc(p.phone||G(gid).phone||'')+'"><div class="err" id="pe"></div><button class="btn" data-act="saveprof">Save</button><p class="sm" style="margin-top:8px">Registered means paid the KSh 100 training registration to Biashara Yangu.</p></div>'}
 function tabToday(gid,f,st,adm){
   if(!f)return noFlock(gid,adm);
   var r=rowFor(st.age||0),kg=st.alive*r.g/1000,och=kg*OCH[r.s]/100,h=flockPick(gid)?'<div class="card">'+flockPick(gid)+'</div>':'';
@@ -202,12 +208,13 @@ function tabFlock(gid,f,st,adm){
   if(adm){
     h+='<div class="card"><h3>Admin: add or edit flock</h3>'+(L.length?'<label for="ef">Edit existing</label><select id="ef" data-act="editpick"><option value="">New flock</option>'+L.map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>'}).join('')+'</select>':'')+'<label for="fn">Flock name</label><input id="fn" placeholder="e.g. Batch 1"><div class="f2"><div><label for="fb">Birds at start</label><input id="fb" type="number" min="1" inputmode="numeric"></div><div><label for="fh">Hatch date</label><input id="fh" type="date"></div></div><div class="err" id="fe"></div><button class="btn" data-act="saveflock">Save flock</button><div id="delbox"></div></div>'}
   return h}
+function mlabel(m){return m.type==='local'?'Local feed':m.type==='commercial'?'Commercial feed':(m.kind==='income'?'Income':'Other expense')}
 function tabMoney(gid,f,st,adm){
-  var M=LG(gid).money||{},ids=Object.keys(M).sort(function(a,b){return String(M[b].date).localeCompare(String(M[a].date))}),mo=iso(today()).slice(0,7),tot={commercial:0,local:0};
-  ids.forEach(function(i){var m=M[i];if(String(m.date).slice(0,7)===mo)tot[m.type]=(tot[m.type]||0)+(m.amount||0)});
+  var M=LG(gid).money||{},ids=Object.keys(M).sort(function(a,b){return String(M[b].date).localeCompare(String(M[a].date))}),mo=iso(today()).slice(0,7),tot={commercial:0,local:0,other:0,income:0};
+  ids.forEach(function(i){var m=M[i];if(String(m.date).slice(0,7)!==mo)return;var k=m.kind==='income'?'income':(m.type==='commercial'||m.type==='local')?m.type:'other';tot[k]+=(m.amount||0)});
   var h='<div class="card"><h3>Add feed spending</h3><label for="mt">Type of feed</label><select id="mt"><option value="commercial">Commercial feed (bought)</option><option value="local">Local feed (own mix)</option></select><div class="f2"><div><label for="ma">Amount spent (KSh)</label><input id="ma" type="number" min="0" inputmode="decimal"></div><div><label for="mk">Feed bought or mixed (kg)</label><input id="mk" type="number" min="0" inputmode="decimal"></div></div><label for="md">Date</label><input id="md" type="date" value="'+iso(today())+'"><div class="err" id="me"></div><button class="btn" data-act="savemoney">Save</button></div>';
-  h+='<div class="card"><h3>This month</h3><div class="row"><span class="sm">Commercial feed</span><b>KSh '+fmt(tot.commercial)+'</b></div><div class="row" style="margin-top:6px"><span class="sm">Local mix</span><b>KSh '+fmt(tot.local)+'</b></div></div>';
-  h+='<div class="card"><h3>Entries</h3>'+(ids.length?'<div class="scroll"><table><tr><th>Date</th><th>Type</th><th>KSh</th><th>kg</th></tr>'+ids.slice(0,15).map(function(i){var m=M[i];return '<tr><td>'+esc(m.date)+'</td><td>'+(m.type==='local'?'Local':'Commercial')+'</td><td>'+fmt(m.amount)+'</td><td>'+(m.kg?fmt(m.kg,1):'-')+'</td></tr>'}).join('')+'</table></div>':'<div class="sm">Nothing recorded yet.</div>')+'</div>';return h}
+  h+='<div class="card"><h3>This month</h3><div class="row"><span class="sm">Commercial feed</span><b>KSh '+fmt(tot.commercial)+'</b></div><div class="row" style="margin-top:6px"><span class="sm">Local mix</span><b>KSh '+fmt(tot.local)+'</b></div><div class="row" style="margin-top:6px"><span class="sm">Other expenses</span><b>KSh '+fmt(tot.other)+'</b></div><div class="row" style="margin-top:6px"><span class="sm">Income</span><b>KSh '+fmt(tot.income)+'</b></div></div>';
+  h+='<div class="card"><h3>Entries</h3>'+(ids.length?'<div class="scroll"><table><tr><th>Date</th><th>Type</th><th>Details</th><th>KSh</th></tr>'+ids.slice(0,25).map(function(i){var m=M[i];return '<tr><td>'+esc(m.date)+'</td><td>'+mlabel(m)+'</td><td>'+esc([m.category,m.desc,m.kg?fmt(m.kg,1)+' kg':''].filter(Boolean).join(' · '))+'</td><td>'+fmt(m.amount)+'</td></tr>'}).join('')+'</table></div>':'<div class="sm">Nothing recorded yet.</div>')+'</div>';return h}
 /* ---------- actions ---------- */
 async function safe(fn,label){try{await fn()}catch(e){toast((label||'Could not save')+(e&&e.message?': '+e.message:''));}}
 var queue={};function wr(path,fn){var p=(queue[path]||Promise.resolve()).then(fn);queue[path]=p.catch(function(){});return p}
@@ -219,6 +226,12 @@ document.addEventListener('click',function(e){
   else if(a==='open'){S.gid=t.getAttribute('data-id');S.adminView=true;S.tab='home';S.fid=null;draw();window.scrollTo(0,0)}
   else if(a==='back'){S.adminView=false;S.gid=null;draw()}
   else if(a==='signout'){signOut()}
+  else if(a==='doimp')importNow();
+  else if(a==='rmlogo')safe(async function(){S.store.groups[gid]=Object.assign({},G(gid),{logo:''});draw();await db.doc('groups/'+gid).update({logo:'',updated:iso(today())});toast('Logo removed')});
+  else if(a==='mklogin')safe(async function(){var em=$('#lem').value.trim().toLowerCase(),pw=$('#lpw').value,er=$('#lerr2');if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){er.textContent='Enter a valid email.';return}if(pw.length<6){er.textContent='Password needs 6 or more characters.';return}
+    try{var sec=firebase.apps.filter(function(x){return x.name==='sec'})[0]||firebase.initializeApp(FBCFG,'sec');await sec.auth().createUserWithEmailAndPassword(em,pw);await sec.auth().signOut()}catch(e){er.textContent=(e&&e.code==='auth/email-already-in-use')?'That email already has a login. Use another email.':'Could not create the login: '+(e&&e.message||'');return}
+    await db.doc('logins/'+em).set({gid:gid});await db.doc('groups/'+gid).update({email:em});S.cred={gid:gid,email:em,pw:pw};S.pw='';draw()});
+  else if(a==='eye'){var pi=$('#lp');if(pi){var sh=pi.type==='password';pi.type=sh?'text':'password';t.setAttribute('aria-pressed',String(sh));t.setAttribute('aria-label',sh?'Hide password':'Show password');t.style.opacity=sh?'1':'.6'}}
   else if(a==='reset')safe(async function(){var em=G(gid).email;if(!em){toast('This group has no email.');return}await auth.sendPasswordResetEmail(em);toast('Reset email sent to '+em)},'Could not send');
   else if(a==='newg')newGroupForm();
   else if(a==='creategrp')createGroup();
@@ -242,6 +255,35 @@ function createGroup(){safe(async function(){var n=$('#gn').value.trim(),em=$('#
   await db.doc('groups/'+gid).set({name:n.slice(0,80),ward:$('#gw').value.trim().slice(0,60),contact:$('#gc').value.trim().slice(0,60),members:m,registered:r,active:true,email:em,created:iso(today())});
   await db.doc('logins/'+em).set({gid:gid});
   S.nb='<div class="card gold"><h3>'+esc(n)+' is ready</h3><p style="margin:0 0 6px">Give the group these sign-in details and the portal link:</p><div class="code" style="font-size:15px;letter-spacing:0">'+esc(em)+'<br>'+esc(pw)+'</div><p class="sm">Write the password down now. It is not shown again. Tap Send password reset on the group page if they forget it.</p><button class="btn ghost" data-act="closenb">Done</button></div>';draw()})}
+function planImport(d){
+  if(Array.isArray(d))d={groups:d};
+  if(!d||typeof d!=='object')return null;
+  var arr=function(k){return Array.isArray(d[k])?d[k]:[]},G0=arr('groups'),F=arr('flocks'),R=arr('records'),L=arr('ledger'),DD=arr('daily'),V=arr('vacc');
+  var gid=function(x){return String(x==null?'':x).replace(/[^A-Za-z0-9_-]/g,'').slice(0,40)},str=function(x,n){return String(x==null?'':x).slice(0,n)};
+  var p={groups:{},flocks:{},logs:{},sk:{f:0,d:0,r:0,m:0},n:{g:0,f:0,d:0,v:0,m:0}},fg={};
+  function lg(g){return p.logs[g]=p.logs[g]||{days:{},vacc:{},money:{}}}
+  G0.forEach(function(g){if(!g||!g.id||!g.name)return;var id=gid(g.id);if(!id)return;p.groups[id]={name:str(g.name,80),ward:str(g.ward,60),contact:str(g.contact,60),phone:str(g.phone,20),members:num(g.members),registered:num(g.paid!=null?g.paid:g.registered),phase:num(g.phase)||0,hens:num(g.hens),cocks:num(g.cocks),chicks:num(g.chicks),lastVisit:str(g.lastVisit,10),notes:str(g.notes,200),imported:iso(today())};if(!S.store.groups[id])p.groups[id].active=true;p.n.g++});
+  F.forEach(function(f){var g=f&&gid(f.groupId);if(!f||!f.id||!g||!p.groups[g]){p.sk.f++;return}var id=gid(f.id);(p.flocks[g]=p.flocks[g]||[]).push({id:id,name:str(f.name||'Flock',60),birds:num(f.count)||0,hatch:str(f.hatch,10),notes:str(f.notes,120)});fg[id]=g;p.n.f++});
+  DD.forEach(function(x){var fid=x&&gid(x.flockId),g=fg[fid];if(!g||!x.date){p.sk.d++;return}var l=lg(g);(l.days[fid]=l.days[fid]||{})[x.date]={fed:num(x.fed),avgW:num(x.avgW),deaths:num(x.deaths)};p.n.d++});
+  R.forEach(function(x){var fid=x&&gid(x.flockId),g=fg[fid];if(!g||!x.date){p.sk.r++;return}var l=lg(g),dd=(l.days[fid]=l.days[fid]||{}),e=dd[x.date];if(e){e.fed=(e.fed||0)+(num(x.feed)||0);e.deaths=(e.deaths||0)+(num(x.deaths)||0)}else dd[x.date]={fed:num(x.feed),avgW:null,deaths:num(x.deaths)};p.n.d++});
+  V.forEach(function(x){var fid=x&&gid(x.flockId),g=fg[fid];if(!g||!x.name||!x.date)return;var l=lg(g);(l.vacc[fid]=l.vacc[fid]||{})[String(x.name)]=x.date;p.n.v++});
+  L.forEach(function(x){var fid=x&&gid(x.flockId),g=fg[fid],id=x&&gid(x.id);if(!g||!x.date||!id){p.sk.m++;return}lg(g).money[id]={date:str(x.date,10),type:(x.type==='expense'&&(x.feedSrc==='commercial'||x.feedSrc==='local'))?x.feedSrc:'other',kind:x.type==='income'?'income':'expense',category:str(x.category,40),desc:str(x.desc,120),amount:num(x.amount)||0,kg:null};p.n.m++});
+  if(!p.n.g)return null;
+  var skip=[p.sk.f&&p.sk.f+' flock(s) with no group',p.sk.m&&p.sk.m+' money entr'+(p.sk.m===1?'y':'ies')+' with no flock',(p.sk.d+p.sk.r)&&(p.sk.d+p.sk.r)+' record(s) with no flock'].filter(Boolean);
+  p.sum='<b>Ready to import</b><div class="sm" style="margin:6px 0">'+p.n.g+' groups · '+p.n.f+' flocks · '+p.n.d+' daily records · '+p.n.v+' vaccinations · '+p.n.m+' money entries'+(skip.length?'<br>Left out: '+esc(skip.join(', ')):'')+'</div>';
+  return p}
+async function importNow(){var p=S.imp;if(!p||S.impBusy)return;S.impBusy=true;S.impMsg='';draw();
+  try{var ids=Object.keys(p.groups);
+   for(var i=0;i<ids.length;i++){var g=ids[i];await db.doc('groups/'+g).set(p.groups[g],{merge:true});
+    var ex=((S.store.flocks[g]||{}).list||[]).slice(),nf=p.flocks[g]||[];nf.forEach(function(f){var j=ex.findIndex(function(x){return x.id===f.id});if(j>=0)ex[j]=f;else ex.push(f)});if(nf.length)await db.doc('flocks/'+g).set({list:ex});
+    if(p.logs[g])await db.doc('logs/'+g).set(p.logs[g],{merge:true})}
+   S.impMsg='Imported '+ids.length+' groups. Give each group its login: open the group and set its email, or use + Add group for new ones.';S.imp=null}
+  catch(e){S.impMsg='Import stopped: '+(e&&e.message||'unknown error')+'. Run it again to continue.'}
+  S.impBusy=false;draw()}
+document.addEventListener('change',function(e){if(e.target.id!=='logof'||S.role!=='admin')return;var f=e.target.files&&e.target.files[0],gid=S.gid;if(!f||!gid)return;
+  var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){try{var m=160,sc=Math.min(m/im.width,m/im.height,1),w=Math.max(1,Math.round(im.width*sc)),h=Math.max(1,Math.round(im.height*sc)),c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);var u=c.toDataURL('image/png');if(u.length>150000)u=c.toDataURL('image/jpeg',0.8);
+    S.store.groups[gid]=Object.assign({},G(gid),{logo:u});draw();db.doc('groups/'+gid).update({logo:u,updated:iso(today())}).then(function(){toast('Logo saved')}).catch(function(x){toast('Could not save the logo: '+(x&&x.message||''))})}catch(x){toast('Could not use that image.')}};im.onerror=function(){toast('Could not read that image.')};im.src=r.result};r.readAsDataURL(f)});
+document.addEventListener('change',function(e){if(e.target.id!=='impf')return;var f=e.target.files&&e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var p=planImport(JSON.parse(r.result));if(!p)throw 0;S.imp=p;S.impMsg=''}catch(x){S.imp=null;S.impMsg='That file is not a Biashara Yangu backup.'}draw()};r.readAsText(f)});
 /* ---------- boot ---------- */
 var auth=null;
 function unsubAll(){S.unsubs.forEach(function(u){try{u()}catch(e){}});S.unsubs=[]}
