@@ -128,7 +128,7 @@ function G(gid){return S.store.groups[gid]||{}}
 function P(gid){return G(gid)}
 function FL(gid){return (S.store.flocks[gid]||{}).list||[]}
 function LG(gid){var l=S.store.logs[gid]||{},m=(S.store.money[gid]||{}).money;if(m){var o=Object.assign({},l);o.money=Object.assign({},l.money||{},m);return o}return l}
-function patchMoney(gid,patch){return wr('money/'+gid,function(){var cur=S.store.money[gid]||{};S.store.money[gid]=merge(cur,patch);draw();return db.doc('money/'+gid).set(patch,{merge:true})})}
+function patchMoney(gid,patch){return wr('money/'+gid,function(){var cur=S.store.money[gid]||{};S.store.money[gid]=merge(cur,patch);draw();fire(db.doc('money/'+gid).set(patch,{merge:true}));return Promise.resolve()})}
 var LINKG=((location.search||'').match(/[?&]g=([A-Za-z0-9_-]{2,40})/)||[])[1]||null;
 var pubSent={};
 function syncPublic(){if(S.role!=='admin'||!db)return;Object.keys(S.store.groups).forEach(function(g){var G0=S.store.groups[g]||{},want={name:G0.name||'',ward:G0.ward||'',logo:(G0.logo&&LOGO_OK.test(G0.logo))?G0.logo:''},have=S.store.public[g],key=JSON.stringify(want);if(pubSent[g]===key)return;if(have&&have.name===want.name&&have.ward===want.ward&&have.logo===want.logo){pubSent[g]=key;return}pubSent[g]=key;db.doc('public/'+g).set(want).catch(function(){pubSent[g]=null})})}
@@ -199,7 +199,7 @@ function renderLogin(){
    +'<div class="err" id="lerr" role="alert">'+esc(S.lerr||'')+'</div><button class="lgbtn" type="submit">Sign in</button>'
    +(ad?'<button type="button" class="link" data-act="admode" style="margin-top:14px">Back to group login</button>':'<button type="button" class="link" data-act="lrole" data-r="" style="margin-top:14px">← Choose a different dashboard</button><p class="sm" style="margin:14px 0 0;text-align:center">Forgot your password? Call Biashara Yangu on <b>0740193141</b>.<br>You need internet the first time you sign in.</p>')+'</form>')
    +(ad?'':'<div class="lgch"><div class="c1"><b>🌾</b><span>Daily feed plan</span></div><div class="c2"><b>💉</b><span>Vaccine reminders</span></div><div class="c3"><b>📈</b><span>Growth and FCR</span></div></div>')
-   +'<div class="lgft">Biashara Yangu TV · Homa Bay, Kenya</div></div>'}
+   +'<div class="lgft">'+(S.offReady?'✓ Saved on this phone: opens without internet<br>':'')+'Biashara Yangu TV · Homa Bay, Kenya</div></div>'}
 function adminRows(){
   var ids=Object.keys(S.store.groups).sort(function(a,b){return String(G(a).name).localeCompare(String(G(b).name))});
   return ids.map(function(id){
@@ -313,9 +313,16 @@ function tabMoney(gid,f,st,adm){
   h+='<div class="card"><h3>Entries</h3>'+(ids.length?'<div class="scroll"><table><tr><th>Date</th><th>Type</th><th>Details</th><th>KSh</th></tr>'+ids.slice(0,25).map(function(i){var m=M[i];return '<tr><td>'+esc(m.date)+'</td><td>'+mlabel(m)+'</td><td>'+esc([m.category,m.desc,m.kg?fmt(m.kg,1)+' kg':''].filter(Boolean).join(' · '))+'</td><td>'+fmt(m.amount)+'</td></tr>'}).join('')+'</table></div>':'<div class="sm">Nothing recorded yet.</div>')+'</div>';return h}
 /* ---------- actions ---------- */
 async function safe(fn,label){try{await fn()}catch(e){toast((label||'Could not save')+(e&&e.message?': '+e.message:''));}}
+var pendW=0;
+function netBar(){var el=document.getElementById('netbar');if(!el){el=document.createElement('div');el.id='netbar';el.setAttribute('role','status');el.style.cssText='position:fixed;left:0;right:0;top:0;z-index:50;padding:6px 12px;font:600 13px/1.3 system-ui,sans-serif;text-align:center;display:none';document.body.appendChild(el)}
+  var off=(navigator.onLine===false);if(off){el.style.display='block';el.style.background='#7a4b00';el.style.color='#fff';el.textContent='No internet. '+(pendW?pendW+' record'+(pendW>1?'s':'')+' saved on this phone, will send when you are online.':'You can keep working; records are saved on this phone.')}
+  else if(pendW){el.style.display='block';el.style.background='#1f5a37';el.style.color='#fff';el.textContent='Sending '+pendW+' saved record'+(pendW>1?'s':'')+'...'}
+  else el.style.display='none'}
+function fire(pr){pendW++;netBar();return pr.then(function(){pendW=Math.max(0,pendW-1);netBar()},function(e){pendW=Math.max(0,pendW-1);netBar();toast('Not saved: '+(e&&e.message||'error'))})}
+window.addEventListener('online',netBar);window.addEventListener('offline',netBar);
 var queue={};function wr(path,fn){var p=(queue[path]||Promise.resolve()).then(fn);queue[path]=p.catch(function(){});return p}
 function merge(a,b){var o=JSON.parse(JSON.stringify(a||{}));Object.keys(b).forEach(function(k){if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k]))o[k]=merge(o[k],b[k]);else o[k]=b[k]});return o}
-function patchLog(gid,patch){return wr('logs/'+gid,function(){var cur=S.store.logs[gid]||{};var next=merge(cur,patch);S.store.logs[gid]=next;draw();return db.doc('logs/'+gid).set(patch,{merge:true})})}
+function patchLog(gid,patch){return wr('logs/'+gid,function(){var cur=S.store.logs[gid]||{};var next=merge(cur,patch);S.store.logs[gid]=next;draw();fire(db.doc('logs/'+gid).set(patch,{merge:true}));return Promise.resolve()})}
 document.addEventListener('click',function(e){
   var t=e.target.closest('[data-act]');if(!t)return;var a=t.getAttribute('data-act'),gid=S.gid;
   if(a==='tab'){S.tab=t.getAttribute('data-t');draw();window.scrollTo(0,0)}
@@ -328,8 +335,8 @@ document.addEventListener('click',function(e){
   else if(a==='welcome'){S.welcomed=true;draw();window.scrollTo(0,0)}
   else if(a==='lrole'){S.lrole=t.dataset.r||null;S.lerr='';draw()}
   else if(a==='pt'){S.pt=t.dataset.p;draw()}
-  else if(a==='addc')safe(async function(){var am=num($('#cam').value),dt=$('#cdt').value,er=$('#cerr');if(am==null||am<=0){er.textContent='Enter the amount.';return}if(!dt){er.textContent='Pick the date.';return}var m=groupLogins(gid).filter(function(x){return x.email===S.cm})[0];if(!m)return;var id='e'+Date.now().toString(36)+rid(3).toLowerCase(),ent={};ent[id]={date:dt,type:$('#cty').value,amount:am,note:$('#cnt').value.trim().slice(0,60)};await db.doc('contribs/'+cid(gid,S.cm)).set({gid:gid,email:S.cm,name:m.name||'',entries:ent},{merge:true});toast('Saved')},'Could not save')
-  else if(a==='delc')safe(async function(){var ref=db.doc('contribs/'+cid(gid,S.cm)),d=cdoc(gid,S.cm),E=Object.assign({},d.entries);delete E[t.dataset.i];await ref.set({gid:gid,email:S.cm,name:d.name||'',entries:E});toast('Deleted')},'Could not delete')
+  else if(a==='addc')safe(async function(){var am=num($('#cam').value),dt=$('#cdt').value,er=$('#cerr');if(am==null||am<=0){er.textContent='Enter the amount.';return}if(!dt){er.textContent='Pick the date.';return}var m=groupLogins(gid).filter(function(x){return x.email===S.cm})[0];if(!m)return;var id='e'+Date.now().toString(36)+rid(3).toLowerCase(),ent={};ent[id]={date:dt,type:$('#cty').value,amount:am,note:$('#cnt').value.trim().slice(0,60)};fire(db.doc('contribs/'+cid(gid,S.cm)).set({gid:gid,email:S.cm,name:m.name||'',entries:ent},{merge:true}));$('#cam').value='';toast(navigator.onLine===false?'Saved on this phone':'Saved')},'Could not save')
+  else if(a==='delc')safe(async function(){var ref=db.doc('contribs/'+cid(gid,S.cm)),d=cdoc(gid,S.cm),E=Object.assign({},d.entries);delete E[t.dataset.i];fire(ref.set({gid:gid,email:S.cm,name:d.name||'',entries:E}));toast('Deleted')},'Could not delete')
   else if(a==='mkmember')safe(async function(){var nm=$('#mn').value.trim(),em=$('#mem').value.trim().toLowerCase(),pw=$('#mpw').value,er=$('#merr');if(!nm){er.textContent='Enter the member name.';return}if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){er.textContent='Enter a valid email.';return}if(pw.length<6){er.textContent='Password needs 6 or more characters.';return}
     var ex=S.store.logins&&S.store.logins[em];if(ex&&ex.gid!==gid){er.textContent='That email already belongs to another group.';return}
     var ma=await mkAuth(em,pw);if(ma.err){er.textContent=ma.err;return}if(ma.relinked)pw='(unchanged: tap Reset if they forgot it)';
@@ -447,6 +454,8 @@ document.addEventListener('submit',function(e){if(e.target.id!=='lf2')return;e.p
 window.addEventListener('offline',function(){toast('You are offline. Records save and sync when the internet is back.')});
 (function(){
   if(typeof firebase==='undefined'){S.err='The portal could not load. Open it once with internet, then it works with weak signal too.';draw();return}
+  try{if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').then(function(){return navigator.serviceWorker.ready}).then(function(){S.offReady=true;draw()}).catch(function(){})}catch(e){}
+  netBar();
   firebase.initializeApp(FBCFG);auth=firebase.auth();db=firebase.firestore();if(LINKG){S.lrole='member';db.doc('public/'+LINKG).get().then(function(d){if(d.exists)S.lg=d.data();else S.lgbad=true;draw()}).catch(function(){S.lgbad=true;draw()})}
   try{db.enablePersistence({synchronizeTabs:true}).catch(function(){})}catch(e){}
   auth.onAuthStateChanged(function(u){
